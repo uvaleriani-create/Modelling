@@ -12,7 +12,9 @@ Jm = 1e-4;
 Lm = 1e-3;    
 Rm = 2.0;
 
+
 % Square points generation
+%{
 L = 0.1;
 points = 800;
 
@@ -30,6 +32,16 @@ y_left = linspace(L/2, -L/2, points/4);
 
 x_path = [x_base, x_right, x_top, x_left];
 y_path = [y_base, y_right, y_top, y_left];
+%}
+
+
+% Michey mouse path
+%
+data = importMickey("mickey_mouse_simple.csv");
+x_path = [data(1:(length(data)-5),1); data(1,1)];
+y_path = -[data(1:(length(data)-5),2); data(1,2)];
+points = length(x_path);
+%}
 
 % Compute the Fourier coefficients of the closed path
 complexPath = x_path + 1i * y_path;
@@ -40,7 +52,7 @@ T = 5;
 w_0 = 2*pi/T;
 t = linspace(0,T, points);
 
-n_armonics = 20;
+n_armonics = 100;
 z = zeros(1, points);
 z_dot = zeros(1, points);
 z_ddot = zeros(1, points);
@@ -76,7 +88,7 @@ u_right = (u_sum - u_diff)/2;
 figure
 hold on
 plot(x_path, y_path, 'r', 'LineWidth',1.5);
-plot(x_path_fourier, y_path_fourier, '--b', 'LineWidth',1.5);
+plot(x_path_fourier, y_path_fourier, 'b', 'LineWidth',0.5);
 hold off
 grid on;
 legend('Original path', 'Fourier approximation');
