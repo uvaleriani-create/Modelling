@@ -29,15 +29,38 @@ complexPath = x_path + 1i * y_path;
 fourierCoefficients = fft(complexPath) / numel(complexPath);
 
 % Compute fourier series
+T = 5;
+w_0 = 2*pi/T;
+t = linspace(0,T, points);
+
 n_armonics = 20;
-complexPath_fourier = zeros(1, points);
+z = zeros(1, points);
+z_dot = zeros(1, points);
+z_ddot = zeros(1, points);
+z_dddot = zeros(1, points);
+
 for k = -n_armonics : n_armonics
     index = mod(-k, points) + 1;
-    complexPath_fourier = complexPath_fourier + fourierCoefficients(index) * exp(1i * 2 * pi * k * (0:points-1) / points);
+
+    % Path and differential calculations
+    exp_term = exp(1i * k * w_0*t)
+    z = z + fourierCoefficients(index) * exp_term;
+    z_dot = z_dot + (1i * k * w_0) * fourierCoefficients(index) * exp_term;
+    z_ddot = z_ddot + (-(k * w_0)^2) * fourierCoefficients(index) * exp_term;
+    z_dddot = z_dddot + (-1i * (k * w_0)^3) * fourierCoefficients(index) * exp_term;
 end
 
-x_path_fourier = real(complexPath_fourier);
-y_path_fourier = imag(complexPath_fourier);
+x_path_fourier = real(z);
+y_path_fourier = imag(z);
+x_vel_fourier = real(z_dot);
+y_vel_fourier = imag(z_dot);
+x_acc_fourier = real(z_ddot);
+y_acc_fourier = imag(z_ddot);
+x_jerk_fourier = real(z_dddot);
+y_jerk_fourier = imag(z_dddot);
+
+
+% Input calculation
 
 figure
 hold on
