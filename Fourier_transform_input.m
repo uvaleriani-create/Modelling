@@ -5,6 +5,13 @@ close all;
 % Code for showing the fourier transform of any closed line, in order to
 % obtain the inputs to the 3D printer motors.
 
+% Typical values
+rm = 0.012;  
+km = 0.05;    
+Jm = 1e-4;   
+Lm = 1e-3;    
+Rm = 2.0;
+
 % Square points generation
 L = 10;
 points = 800;
@@ -59,13 +66,17 @@ y_acc_fourier = imag(z_ddot);
 x_jerk_fourier = real(z_dddot);
 y_jerk_fourier = imag(z_dddot);
 
-
 % Input calculation
+u_sum = (2*Jm*Lm/(rm*km))*x_jerk_fourier + (2*Jm*Rm/(rm*km))*x_acc_fourier + (2*km/rm)*x_vel_fourier;
+u_diff = (2*Jm*Lm/(rm*km))*y_jerk_fourier + (2*Jm*Rm/(rm*km))*y_acc_fourier + (2*km/rm)*y_vel_fourier;
+
+u_left = (u_sum + u_diff)/2;
+u_right = (u_sum - u_diff)/2;
 
 figure
 hold on
-plot(x_path, y_path);
-plot(x_path_fourier, y_path_fourier);
+plot(x_path, y_path, 'r', 'LineWidth',1.5);
+plot(x_path_fourier, y_path_fourier, '--b', 'LineWidth',1.5);
 hold off
 grid on;
 legend('Original path', 'Fourier approximation');
@@ -75,3 +86,11 @@ title('Fourier Approximation of Closed Square Path');
 xlim([-3*L/4, 3*L/4]);
 ylim([-3*L/4, 3*L/4]);
 
+
+figure;
+plot(t, u_left, 'b', t, u_right, 'r');
+grid on;
+legend('Left motor input', 'Right motor input');
+xlabel('Time (s)');
+ylabel('Motor input');
+title('Motor Inputs');
