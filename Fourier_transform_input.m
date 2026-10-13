@@ -13,7 +13,7 @@ Lm = 1e-3;
 Rm = 2.0;
 
 % Square points generation
-L = 10;
+L = 0.1;
 points = 800;
 
 x_base = linspace(-L/2, L/2, points/4);
@@ -50,7 +50,7 @@ for k = -n_armonics : n_armonics
     index = mod(-k, points) + 1;
 
     % Path and differential calculations
-    exp_term = exp(1i * k * w_0*t)
+    exp_term = exp(1i * k * w_0*t);
     z = z + fourierCoefficients(index) * exp_term;
     z_dot = z_dot + (1i * k * w_0) * fourierCoefficients(index) * exp_term;
     z_ddot = z_ddot + (-(k * w_0)^2) * fourierCoefficients(index) * exp_term;
