@@ -38,8 +38,24 @@ y_path = [y_base, y_right, y_top, y_left];
 % Michey mouse path
 %
 data = importMickey("mickey_mouse_simple.csv");
-x_path = [data(1:(length(data)-5),1); data(1,1)];
-y_path = -[data(1:(length(data)-5),2); data(1,2)];
+x_path = [data(1:(length(data)),1); data(1,1)];
+y_path = -[data(1:(length(data)),2); data(1,2)];
+
+% Data check to eliminate spurious data with manual tollerance check
+toll = 90;
+x_path_epurated = [x_path(1)];
+y_path_epurated = [y_path(1)];
+for i = 2:length(data)
+    diff_x = abs(x_path(i) - x_path_epurated(end));
+    diff_y = abs(y_path(i) - y_path_epurated(end));
+    if (diff_x < toll) && (diff_y < toll)
+        x_path_epurated = [x_path_epurated; x_path(i)];
+        y_path_epurated = [y_path_epurated; y_path(i)];
+    end
+end
+
+x_path = x_path_epurated;
+y_path = y_path_epurated;
 points = length(x_path);
 %}
 
@@ -52,7 +68,7 @@ T = 5;
 w_0 = 2*pi/T;
 t = linspace(0,T, points);
 
-n_armonics = 100;
+n_armonics = 80;
 z = zeros(1, points);
 z_dot = zeros(1, points);
 z_ddot = zeros(1, points);
@@ -95,8 +111,8 @@ legend('Original path', 'Fourier approximation');
 xlabel('X');
 ylabel('Y');
 title('Fourier Approximation of Closed Square Path');
-xlim([-3*L/4, 3*L/4]);
-ylim([-3*L/4, 3*L/4]);
+%xlim([-3*L/4, 3*L/4]);
+%ylim([-3*L/4, 3*L/4]);
 
 
 figure;
