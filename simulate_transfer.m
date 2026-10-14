@@ -1,5 +1,5 @@
 
-function cells_temperature = simulate_transfer(temp_mid, L, points, dt)
+function cells_temperature = simulate_transfer(temp_mid, L, points, dt, uniformity_option)
 
     % path discretization and cells dimensioning
     cell_length = L/(points/4);
@@ -13,9 +13,9 @@ function cells_temperature = simulate_transfer(temp_mid, L, points, dt)
     
     % Temperatures and constants:
     unit_cap = 1.5e6;              % unit capacitance constant for filament
-    unit_diff_filament = 0.2;    % unit diffusion constant for filament
+    unit_diff_filament = 300;    % unit diffusion constant for filament
     rho_bed = 100;
-    rho_air = 50;
+    rho_air = 20;
     bed_temperature = 80;        % assumed constant
     ext_temp = 35;     % assumed constant
     beta_diff_int = cell_length / (unit_diff_filament * cell_inner);
@@ -45,6 +45,19 @@ function cells_temperature = simulate_transfer(temp_mid, L, points, dt)
             neigh_heatTransfer = neigh_heatTransfer + ...
             (temp_mid(k+1) - temp_mid(k)) / beta_diff_int;
         end
+        
+        if uniformity_option == 1
+            if k == 1
+                neigh_heatTransfer = neigh_heatTransfer + (temp_mid(points) - temp_mid(k)) / beta_diff_int;
+                %neigh_heatTransfer = neigh_heatTransfer + (temp_mid(k+1) - temp_mid(k)) / beta_diff_int;
+            end
+
+            if k == points
+                %neigh_heatTransfer = neigh_heatTransfer + (temp_mid(points-1) - temp_mid(k)) / beta_diff_int;
+                neigh_heatTransfer = neigh_heatTransfer + (temp_mid(1) - temp_mid(k)) / beta_diff_int;
+            end
+        end
+
         % Tottal heat exchange and temperature
         tot_heatTransfer = bed_heatTransfer + air_heatTransfer + neigh_heatTransfer;
         cells_temperature(k) = temp_mid(k) + (dt / (unit_cap * cell_volume)) * tot_heatTransfer;

@@ -4,7 +4,7 @@ close all;
 
 % Path definition -- Square
 L = 0.1;
-points = 100;
+points = 60;
 T = 4;
 dt = T/points;
 
@@ -42,6 +42,9 @@ ext_temp = 35;     % assumed constant
 cells_temperature = [];             % Empty initial temperature domain
 printed_path_x = [];                  % Empty initial printed path
 printed_path_y = [];
+cell1_t = [];
+
+uniformity_option = 0;
 
 for i = 1:points
     printed_path_x = [printed_path_x, x_path(i)];
@@ -50,7 +53,8 @@ for i = 1:points
     temp_mid = cells_temperature;
     
     % Function call
-    cells_temperature = simulate_transfer(temp_mid, L, points, dt);
+    cells_temperature = simulate_transfer(temp_mid, L, points, dt, uniformity_option);
+    cell1_t = [cell1_t, cells_temperature(1)];
 
     %figure animation
     figure(1);
@@ -83,14 +87,17 @@ end
 %
 flag_uniform_t= 0;
 temp_toll = 0.5;
+uniformity_option = 1;
 
 while flag_uniform_t == 0
     temperatureRange = max(cells_temperature) - min(cells_temperature);
     if temperatureRange <= temp_toll
         flag_uniform_t = 1;
+        mean_temp = cells_temperature(1);
     else
         t_mid = cells_temperature;
-        cells_temperature = simulate_transfer(temp_mid, L, points, dt);
+        cells_temperature = simulate_transfer(t_mid, L, points, dt, uniformity_option);
+        cell1_t = [cell1_t, cells_temperature(1)];
     end
 
     % Animation
@@ -119,5 +126,10 @@ while flag_uniform_t == 0
     drawnow;
 end
 %}
+
+t = linspace(0, dt*length(cell1_t), length(cell1_t));
+figure
+plot(t, cell1_t);
+
 
     
