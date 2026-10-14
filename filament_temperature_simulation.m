@@ -4,7 +4,7 @@ close all;
 
 % Path definition -- Square
 L = 0.1;
-points = 800;
+points = 100;
 T = 4;
 dt = T/points;
 
@@ -80,7 +80,7 @@ end
 
 
 % Uniformity simulation
-%{
+%
 flag_uniform_t= 0;
 temp_toll = 0.5;
 
@@ -89,8 +89,34 @@ while flag_uniform_t == 0
     if temperatureRange <= temp_toll
         flag_uniform_t = 1;
     else
-        
+        t_mid = cells_temperature;
+        cells_temperature = simulate_transfer(temp_mid, L, points, dt);
     end
+
+    % Animation
+    figure(1);
+    clf;
+    if length(printed_path_x) > 1
+    surface([printed_path_x; printed_path_x], ...
+            [printed_path_y; printed_path_y], ...
+            zeros(2, numel(printed_path_x)), ...
+            [cells_temperature; cells_temperature], ...
+            'FaceColor', 'none', ...
+            'EdgeColor', 'interp', ...
+            'LineWidth', 2);
+    else
+    scatter(printed_path_x, printed_path_y, 30, cells_temperature, 'filled');
+    end
+    axis equal;
+    xlim([min(x_path)-0.1, max(x_path)+0.1]);
+    ylim([min(y_path)-0.1, max(y_path)+0.1]);
+    xlabel('x');
+    ylabel('y');
+    title('Printed Path Temperature');
+    colorbar;
+    colormap turbo;
+    clim([ext_temp nozzle_temperature]);
+    drawnow;
 end
 %}
 
