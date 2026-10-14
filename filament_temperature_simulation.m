@@ -55,6 +55,7 @@ R_ext = [R_bed, R_air_top, R_air_side, R_air_side];
 cells_temperature = [];             % Empty initial temperature domain
 printed_path_x = [];                  % Empty initial printed path
 printed_path_y = [];
+
 for i = 1:points
     printed_path_x = [printed_path_x, x_path(i)];
     printed_path_y = [printed_path_y, y_path(i)];
@@ -110,5 +111,6 @@ for i = 1:points
     title('Printed Path Temperature');
     colorbar;
     colormap turbo;
+    clim([ext_temp nozzle_temperature]);
     drawnow;
 end
