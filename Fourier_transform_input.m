@@ -14,21 +14,23 @@ Rm = 2.0;
 
 
 % Square points generation
-%{
+%
 L = 0.1;
 points = 800;
+origin_shift_x = L/2;
+origin_shift_y = L/2;
 
-x_base = linspace(-L/2, L/2, points/4);
-y_base = -L/2 * ones(1, points/4);
+x_base = origin_shift_x + linspace(-L/2, L/2, points/4);
+y_base = origin_shift_y + -L/2 * ones(1, points/4);
 
-x_right = L/2 * ones(1, points/4);
-y_right = linspace(-L/2, L/2, points/4);
+x_right = origin_shift_x + L/2 * ones(1, points/4);
+y_right = origin_shift_y + linspace(-L/2, L/2, points/4);
 
-x_top = linspace(L/2, -L/2, points/4);
-y_top = L/2 * ones(1, points/4);
+x_top = origin_shift_x + linspace(L/2, -L/2, points/4);
+y_top = origin_shift_y + L/2 * ones(1, points/4);
 
-x_left = -L/2 * ones(1, points/4);
-y_left = linspace(L/2, -L/2, points/4);
+x_left = origin_shift_x + -L/2 * ones(1, points/4);
+y_left = origin_shift_y + linspace(L/2, -L/2, points/4);
 
 x_path = [x_base, x_right, x_top, x_left];
 y_path = [y_base, y_right, y_top, y_left];
@@ -37,9 +39,11 @@ y_path = [y_base, y_right, y_top, y_left];
 
 % Michey mouse path
 %
+% Import and mirror around x axis
 data = importMickey("mickey_mouse_simple.csv");
 x_path = [data(1:(length(data)),1); data(1,1)];
 y_path = -[data(1:(length(data)),2); data(1,2)];
+
 
 % Data check to eliminate spurious data with manual tollerance check
 toll = 90;
@@ -56,6 +60,21 @@ end
 
 x_path = x_path_epurated;
 y_path = y_path_epurated;
+
+% Scaling and centering
+origin_shift_x = 0;
+origin_shift_y = 0.31;
+desired_scale = 0.3;
+dim_x = max(x_path) - min(x_path);
+dim_y = max(y_path) - min(y_path);
+if dim_x > 0 && dim_y > 0
+    scaleFactor = desired_scale / max(dim_x, dim_y);
+    x_path = x_path * scaleFactor;
+    y_path = y_path * scaleFactor;
+end
+
+x_path = origin_shift_x + x_path;
+y_path = origin_shift_y + y_path;
 points = length(x_path);
 %}
 
@@ -68,7 +87,7 @@ T = 5;
 w_0 = 2*pi/T;
 t = linspace(0,T, points);
 
-n_armonics = 80;
+n_armonics = 20;
 z = zeros(1, points);
 z_dot = zeros(1, points);
 z_ddot = zeros(1, points);
@@ -108,8 +127,8 @@ plot(x_path_fourier, y_path_fourier, 'b', 'LineWidth',0.5);
 hold off
 grid on;
 legend('Original path', 'Fourier approximation');
-xlabel('X');
-ylabel('Y');
+xlabel('X, m');
+ylabel('Y, m');
 title('Fourier Approximation of Closed Square Path');
 %xlim([-3*L/4, 3*L/4]);
 %ylim([-3*L/4, 3*L/4]);
@@ -120,5 +139,5 @@ plot(t, u_left, 'b', t, u_right, 'r');
 grid on;
 legend('Left motor input', 'Right motor input');
 xlabel('Time (s)');
-ylabel('Motor input');
+ylabel('Motor input voltage, V');
 title('Motor Inputs');
