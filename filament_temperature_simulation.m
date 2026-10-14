@@ -34,22 +34,9 @@ cell_areas = [cell_base, cell_top, cell_side, cell_side];
 cell_volume = cell_base * cell_height;
 
 % Temperatures and constants:
-unit_cap = 1.5e6;              % unit capacitance constant for filament
-unit_diff_filament = 0.2;    % unit diffusion constant for filament
-impedance_resistance_bed = 0.1;  % temperature impedance resistance between filament and bed
-impedance_resistance_air = 0.1;  % temperature impedance resistance between filament and bed
-rho_bed = 100;
-rho_air = 20;
-bed_temperature = 80;        % assumed constant
 nozzle_temperature = 120;
 nozzle_eff = 0.95;
 ext_temp = 35;     % assumed constant
-beta_diff_ext = unit_diff_filament * cell_areas;
-beta_diff_int = cell_length / (unit_diff_filament * cell_inner);
-R_bed = 1 / (rho_bed * cell_base);
-R_air_top = 1 / (rho_air * cell_top);
-R_air_side = 1 / (rho_air * cell_side);
-R_ext = [R_bed, R_air_top, R_air_side, R_air_side];
 
 % Computing the temperature over filament deposition
 cells_temperature = [];             % Empty initial temperature domain
@@ -61,33 +48,9 @@ for i = 1:points
     printed_path_y = [printed_path_y, y_path(i)];
     cells_temperature = [cells_temperature, nozzle_eff*nozzle_temperature];
     temp_mid = cells_temperature;
-    for k = 1:length(temp_mid)
-        % bed to filament transfer
-        temperatureDifference = bed_temperature - temp_mid(k);
-        bed_heatTransfer = temperatureDifference / R_ext(1);
-        % filament to air transfer
-        air_heatTransfer = 0;
-        for s = 2:4
-            temperatureDifference = ext_temp - temp_mid(k);
-            air_heatTransfer = air_heatTransfer + temperatureDifference / R_ext(s);
-        end
-        
-        % Neighbour cells diffusion heat transfer
-        neigh_heatTransfer = 0;
-        if k > 1
-            neigh_heatTransfer = neigh_heatTransfer + ...
-                (temp_mid(k-1) - temp_mid(k)) / beta_diff_int;
-        end
-        if k < length(temp_mid)
-            neigh_heatTransfer = neigh_heatTransfer + ...
-            (temp_mid(k+1) - temp_mid(k)) / beta_diff_int;
-        end
-        % Tottal heat exchange and temperature
-        tot_heatTransfer = bed_heatTransfer + air_heatTransfer + neigh_heatTransfer;
-        cells_temperature(k) = temp_mid(k) + (dt / (unit_cap * cell_volume)) * tot_heatTransfer;
-    end
-
-
+    
+    % Function call
+    cells_temperature = simulate_transfer(temp_mid, L, points, dt);
 
     %figure animation
     figure(1);
@@ -114,3 +77,21 @@ for i = 1:points
     clim([ext_temp nozzle_temperature]);
     drawnow;
 end
+
+
+% Uniformity simulation
+%{
+flag_uniform_t= 0;
+temp_toll = 0.5;
+
+while flag_uniform_t == 0
+    temperatureRange = max(cells_temperature) - min(cells_temperature);
+    if temperatureRange <= temp_toll
+        flag_uniform_t = 1;
+    else
+        
+    end
+end
+%}
+
+    
