@@ -50,7 +50,23 @@ R_ext = [R_bed, R_air_top, R_air_side, R_air_side];
 % Offset temperature:
 t_off = compute_temperature(zeros(1, points), zeros(1, points), points, dt, R_ext, beta_diff_int, unit_cap, cell_volume, ext_temp, nozzle_eff);
 
-disp(t_off);
+% M_N matrix
+M_n = zeros(points, points);
+for j = 1:points
+    t_n = zeros(1, points);
+    t_n(j) = 1;
+    t_out = compute_temperature(t_n, zeros(1, points), points, dt, R_ext, beta_diff_int, unit_cap, cell_volume, ext_temp, nozzle_eff)';
+    M_n(:, j) = t_out' - t_off;
+end
+
+% M_b matrix
+M_b = zeros(points, points);
+for j = 1:points
+    t_b = zeros(1, points);
+    t_b(j) = 1;
+    t_out = compute_temperature(zeros(1, points), t_b, points, dt, R_ext, beta_diff_int, unit_cap, cell_volume, ext_temp, nozzle_eff)';
+    M_b(:, j) = t_out' - t_off;
+end
 
 
 
