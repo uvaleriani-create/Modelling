@@ -83,13 +83,18 @@ u_nom = [t_n_nom*ones(1,points), t_b_nom*ones(1,points)]';
 f = -2 * W * u_nom;
 
 % Upper and lower bounds for nozzle and bed
-ub = [150, 80];
-lb = [90, 30];
+ub = [150*ones(1,points), 80*ones(1,points)];
+lb = [90*ones(1,points), 30*ones(1,points)];
 
 % Solve QP
-u_opt = quadprog(H, f, [], [], A_eq, b_eq, lb', ub', [], optimoptions('quadprog', 'Display', 'off'));
+[u_opt, fval, exitflag] = quadprog(H, f, [], [], A_eq, b_eq, lb', ub', [], optimoptions('quadprog', 'Display', 'off'));
 
+if exitflag ~= 1
+    fprintf("\nQP optimization failed\n");
+end
 
+T_n_opt = u_opt(1, 1:60);
+T_b_opt = u_opt(1, 61:120);
 
 
 
