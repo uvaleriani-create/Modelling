@@ -115,7 +115,7 @@ for i = 1:points
     temp_mid = cells_temperature;
     
     % Function call
-    cells_temperature = simulate_transfer_optimal(temp_mid, T_n_opt(i), T_b_opt(i), points, dt, R_ext, beta_diff_int, unit_cap, cell_volume, ext_temp, nozzle_eff);
+    cells_temperature = simulate_transfer_optimal(temp_mid, T_b_opt(i), dt, R_ext, beta_diff_int, unit_cap, cell_volume, ext_temp);
     cell1_t = [cell1_t, cells_temperature(1)];
 
     if i >= n_mid
@@ -123,7 +123,7 @@ for i = 1:points
     end
 
     %figure animation
-    %
+    %{
     figure(1);
     clf;
     if length(printed_path_x) > 1
@@ -149,8 +149,23 @@ for i = 1:points
     drawnow;
     %}
 end
-end_of_print = i;
 
+cellN_t = cells_temperature(points);
+
+t = linspace(0, dt*length(cell1_t), length(cell1_t));
+t_m = linspace(dt*n_mid, dt*length(cell1_t), length(cell_mid_t));
+
+figure
+hold on;
+plot(t, cell1_t, 'r', 'LineWidth', 1.5);
+plot(points*dt, cellN_t, 'xb', 'LineWidth', 1.5);
+plot(t_m, cell_mid_t, 'g', 'LineWidth', 1.5);
+xlabel('Time, s');
+ylabel('Filament Temperature, °C');
+title('Printed Path Temperature');
+legend('c_1 cell temperature', 'c_N cell temperature', 'c_{N/2} cell temperature');
+xlim([-0.5, T + 0.5]);
+hold off;
 
 
 
@@ -183,7 +198,7 @@ end
 
 % Function for computing temperature in simulation with optimized vector
 % temperatures
-function T_f = simulate_transfer_optimal(t_mid, T_N, T_b, points, dt, R_ext, beta_diff, cap, vol, T_ext, eff)
+function T_f = simulate_transfer_optimal(t_mid, T_b, dt, R_ext, beta_diff, cap, vol, T_ext)
 
     curr_len = length(t_mid);
     for k = 1:curr_len
