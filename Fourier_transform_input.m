@@ -13,6 +13,9 @@ Lm = 1e-3;
 Rm = 2.0;
 
 
+sigma_print = 1 %boolean flag coming from FSM indicating that 1:operational printing 0:printing stopped
+
+
 % Square points generation
 %
 L = 0.1;
@@ -141,3 +144,11 @@ legend('Left motor input', 'Right motor input');
 xlabel('Time (s)');
 ylabel('Motor input voltage, V');
 title('Motor Inputs');
+
+% Added the calculation of filament used in meters. For now this assumes every time nozzle moves it is printing. 
+
+filament_used = cumtrapz(t, sigma_print * sqrt(x_vel_fourier.^2 + y_vel_fourier.^2));
+L_max = 5.0; % Maximum spool capacity 
+if max(filament_used) >= L_max
+    disp('Filament_Finished');
+end
