@@ -14,7 +14,8 @@ Rm = 2.0;
 
 
 sigma_print = 1 %boolean flag coming from FSM indicating that 1:operational printing 0:printing stopped
-
+L_wipe = 0.05; % in cm filament to extrude when wiping
+sigma_wipe = 1 %boolean flag indicating that FSM is in state S3
 
 % Square points generation
 %
@@ -37,7 +38,7 @@ y_left = origin_shift_y + linspace(L/2, -L/2, points/4);
 
 x_path = [x_base, x_right, x_top, x_left];
 y_path = [y_base, y_right, y_top, y_left];
-%}
+%
 
 
 % Michey mouse path
@@ -151,4 +152,10 @@ filament_used = cumtrapz(t, sigma_print * sqrt(x_vel_fourier.^2 + y_vel_fourier.
 L_max = 5.0; % Maximum spool capacity 
 if max(filament_used) >= L_max
     disp('Filament_Finished');
+end
+
+filament_wiped = cumtrapz(t, sigma_wipe * sqrt(x_vel_fourier.^2 + y_vel_fourier.^2))
+if max(filament_wiped) >= L_wipe
+    sigma_extruded = 1
+    sigma_wipe = 0
 end
