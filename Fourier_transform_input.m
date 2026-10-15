@@ -38,7 +38,7 @@ y_path = [y_base, y_right, y_top, y_left];
 
 
 % Michey mouse path
-%
+%{
 % Import and mirror around x axis
 data = importMickey("mickey_mouse_simple.csv");
 x_path = [data(1:(length(data)),1); data(1,1)];
@@ -83,7 +83,7 @@ complexPath = x_path + 1i * y_path;
 fourierCoefficients = fft(complexPath) / numel(complexPath);
 
 % Compute fourier series
-T = 5;
+T = 10;
 w_0 = 2*pi/T;
 t = linspace(0,T, points);
 
