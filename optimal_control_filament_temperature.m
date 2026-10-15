@@ -74,7 +74,7 @@ T_f = 85;
 A_eq = M_tot;
 b_eq = ones(1, points) * T_f - t_off;
 W_n = 1;
-W_b = 5;
+W_b = 2;
 W = diag([ones(1,points)*W_n, ones(1,points)*W_b]);
 H = 2*W;
 t_n_nom = 120;
@@ -157,6 +157,7 @@ t_m = linspace(dt*n_mid, dt*length(cell1_t), length(cell_mid_t));
 
 figure
 hold on;
+hold on;
 plot(t, cell1_t, 'r', 'LineWidth', 1.5);
 plot(points*dt, cellN_t, 'xb', 'LineWidth', 1.5);
 plot(t_m, cell_mid_t, 'g', 'LineWidth', 1.5);
@@ -167,8 +168,15 @@ legend('c_1 cell temperature', 'c_N cell temperature', 'c_{N/2} cell temperature
 xlim([-0.5, T + 0.5]);
 hold off;
 
-
-
+figure
+hold on;
+plot(t, T_n_opt, 'r', 'LineWidth', 1.5);
+plot(t, T_b_opt, 'b', 'LineWidth', 1.5);
+xlabel('Time, s');
+ylabel('Temperature, °C');
+title('Temperature controls');
+legend('Nozzle temperature', 'Bed temperature');
+hold off;
 
 % transfer matrix and offset computing function 
 % Same function as the simulate_transfer but it accepts vector temperatures
