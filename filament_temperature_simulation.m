@@ -43,6 +43,8 @@ cells_temperature = [];             % Empty initial temperature domain
 printed_path_x = [];                  % Empty initial printed path
 printed_path_y = [];
 cell1_t = [];
+cell_mid_t = [];
+n_mid = n_cells/2 + 0.5;
 
 uniformity_option = 0;
 
@@ -56,7 +58,12 @@ for i = 1:points
     cells_temperature = simulate_transfer(temp_mid, L, points, dt, uniformity_option);
     cell1_t = [cell1_t, cells_temperature(1)];
 
+    if i >= n_mid
+        cell_mid_t = [cell_mid_t, cells_temperature(n_mid)];
+    end
+
     %figure animation
+    %{
     figure(1);
     clf;
     if length(printed_path_x) > 1
@@ -80,7 +87,9 @@ for i = 1:points
     colormap turbo;
     clim([ext_temp nozzle_temperature]);
     drawnow;
+    %}
 end
+end_of_print = i;
 
 
 % Uniformity simulation
@@ -88,6 +97,7 @@ end
 flag_uniform_t= 0;
 temp_toll = 0.5;
 uniformity_option = 1;
+cellN_t = [];
 
 while flag_uniform_t == 0
     temperatureRange = max(cells_temperature) - min(cells_temperature);
@@ -98,9 +108,12 @@ while flag_uniform_t == 0
         t_mid = cells_temperature;
         cells_temperature = simulate_transfer(t_mid, L, points, dt, uniformity_option);
         cell1_t = [cell1_t, cells_temperature(1)];
+        cellN_t = [cellN_t, cells_temperature(n_cells)];
+        cell_mid_t = [cell_mid_t, cells_temperature(n_mid)];
     end
 
     % Animation
+    %{
     figure(1);
     clf;
     if length(printed_path_x) > 1
@@ -124,12 +137,23 @@ while flag_uniform_t == 0
     colormap turbo;
     clim([ext_temp nozzle_temperature]);
     drawnow;
+    %}
 end
 %}
 
 t = linspace(0, dt*length(cell1_t), length(cell1_t));
+t_N = linspace(dt*end_of_print, dt*length(cell1_t), length(cellN_t));
+t_m = linspace(dt*n_mid, dt*length(cell1_t), length(cell_mid_t));
 figure
-plot(t, cell1_t);
+hold on;
+plot(t, cell1_t, 'r', 'LineWidth', 1.5);
+plot(t_N, cellN_t, 'b', 'LineWidth', 1.5);
+plot(t_m, cell_mid_t, 'g', 'LineWidth', 1.5);
+xlabel('Time, s');
+ylabel('Filament Temperature, °C');
+title('Printed Path Temperature');
+legend('c_1 cell temperature', 'c_N cell temperature', 'c_{N/2} cell temperature');
+hold off;
 
 
     
