@@ -68,6 +68,28 @@ for j = 1:points
     M_b(:, j) = t_out' - t_off;
 end
 
+% Optimal Quadratic Programming algorithm
+M_tot = [M_n, M_b];
+T_f = 85;
+A_eq = M_tot;
+b_eq = ones(1, points) * T_f - t_off;
+W_n = 1;
+W_b = 5;
+W = diag([ones(1,points)*W_n, ones(1,points)*W_b]);
+H = 2*W;
+t_n_nom = 120;
+t_b_nom = 60;
+u_nom = [t_n_nom*ones(1,points), t_b_nom*ones(1,points)]';
+f = -2 * W * u_nom;
+
+% Upper and lower bounds for nozzle and bed
+ub = [150, 80];
+lb = [90, 30];
+
+% Solve QP
+u_opt = quadprog(H, f, [], [], A_eq, b_eq, lb', ub', [], optimoptions('quadprog', 'Display', 'off'));
+
+
 
 
 
