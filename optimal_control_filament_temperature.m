@@ -93,8 +93,64 @@ if exitflag ~= 1
     fprintf("\nQP optimization failed\n");
 end
 
-T_n_opt = u_opt(1, 1:60);
-T_b_opt = u_opt(1, 61:120);
+T_n_opt = u_opt(1:60, 1);
+T_b_opt = u_opt(61:120, 1);
+
+
+% Simulation with optimal temperature control
+cells_temperature = [];
+printed_path_x = [];
+printed_path_y = [];
+cell1_t = [];
+cell_mid_t = [];
+n_mid = n_cells/2 + 0.5;
+
+uniformity_option = 0;
+
+for i = 1:points
+    printed_path_x = [printed_path_x, x_path(i)];
+    printed_path_y = [printed_path_y, y_path(i)];
+
+    cells_temperature = [cells_temperature, nozzle_eff*T_n_opt(i)];
+    temp_mid = cells_temperature;
+    
+    % Function call
+    cells_temperature = simulate_transfer_optimal(temp_mid, T_n_opt(i), T_b_opt(i), points, dt, R_ext, beta_diff_int, unit_cap, cell_volume, ext_temp, nozzle_eff);
+    cell1_t = [cell1_t, cells_temperature(1)];
+
+    if i >= n_mid
+        cell_mid_t = [cell_mid_t, cells_temperature(n_mid)];
+    end
+
+    %figure animation
+    %
+    figure(1);
+    clf;
+    if length(printed_path_x) > 1
+    surface([printed_path_x; printed_path_x], ...
+            [printed_path_y; printed_path_y], ...
+            zeros(2, numel(printed_path_x)), ...
+            [cells_temperature; cells_temperature], ...
+            'FaceColor', 'none', ...
+            'EdgeColor', 'interp', ...
+            'LineWidth', 2);
+    else
+    scatter(printed_path_x, printed_path_y, 30, cells_temperature, 'filled');
+    end
+    axis equal;
+    xlim([min(x_path)-0.1, max(x_path)+0.1]);
+    ylim([min(y_path)-0.1, max(y_path)+0.1]);
+    xlabel('x');
+    ylabel('y');
+    title('Printed Path Temperature');
+    colorbar;
+    colormap turbo;
+    clim([ext_temp ub(1)]);
+    drawnow;
+    %}
+end
+end_of_print = i;
+
 
 
 
@@ -122,4 +178,25 @@ function T_f = compute_temperature(T_N, T_b, points, dt, R_ext, beta_diff, cap, 
         end
     T_f = cells;
     end
+end
+
+
+% Function for computing temperature in simulation with optimized vector
+% temperatures
+function T_f = simulate_transfer_optimal(t_mid, T_N, T_b, points, dt, R_ext, beta_diff, cap, vol, T_ext, eff)
+
+    curr_len = length(t_mid);
+    for k = 1:curr_len
+        bed = (T_b - t_mid(k)) / R_ext(1);
+        air = (T_ext - t_mid(k))/R_ext(2) + 2*(T_ext - t_mid(k))/R_ext(3);
+        neigh = 0;
+        if k > 1
+            neigh = neigh + (t_mid(k-1) - t_mid(k)) / beta_diff;
+        end
+        if k < curr_len
+            neigh = neigh + (t_mid(k+1) - t_mid(k)) / beta_diff;
+        end
+        cells(k) = t_mid(k) + 1/(cap * vol) * dt * (bed + air + neigh);
+    end
+    T_f = cells;
 end
