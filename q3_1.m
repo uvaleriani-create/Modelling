@@ -262,32 +262,25 @@ u_l = 0.5 * (u_sum + u_diff);
 u_r = 0.5 * (u_sum - u_diff);
 end
 
-
-%modify automata ---- CURRENTLY WRONG---
+%currently up o date correct automata
 function q_next = step_dfa_parked(q_curr, M, m)
 switch q_curr
-    case 0
-        if M == 'V' && m == '+', q_next = 1;
-        elseif M == 'V' && m == '0', q_next = 2;
-        else, q_next = 3; end
-    case 1
-        if M == 'V' && m == '+', q_next = 1;
-        elseif M == 'V' && m == '0', q_next = 2;
-        else, q_next = 3; end
-    case 2
-        if M == 'V' && m == '0', q_next = 2;
-        elseif M == 'H' && m == '+', q_next = 4;
-        elseif M == 'H' && m == '0', q_next = 5;
-        else, q_next = 3; end
+    case 0 
+        if M == 'V' && m == '0',     q_next = 1;
+        elseif M == 'H' && m == '0', q_next = 2;
+        else,                        q_next = 0; end
+    case 1 
+        if M == 'H' && m == '0',     q_next = 3;
+        elseif M == 'V' && m == '+', q_next = 0;
+        else,                        q_next = 1; end
+    case 2 
+        if M == 'V' && m == '0',     q_next = 3;
+        elseif M == 'H' && m == '+', q_next = 0;
+        else,                        q_next = 2; end
     case 3
-        q_next = 3;
-    case 4
-        if M == 'H' && m == '+', q_next = 4;
-        elseif M == 'H' && m == '0', q_next = 5;
-        else, q_next = 3; end
-    case 5
-        if m == '0', q_next = 5;
-        else, q_next = 3; end
+        if M == 'H' && m == '+',     q_next = 1;
+        elseif M == 'V' && m == '+', q_next = 2;
+        else,                        q_next = 3; end
 end
 end
 
