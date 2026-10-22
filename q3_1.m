@@ -115,7 +115,7 @@ while t_curr < t_final
         [M, m]     = poll_rotational_sensors(u_l, u_r, dtheta_l, dtheta_r, omega_tol);
         q_auto     = step_dfa_parked(q_auto, M, m);
         
-        if q_auto == 5
+        if q_auto == 3 % corrected
             disp('origin detected');
             q             = 3;
             t_state_enter = t_curr;
@@ -238,11 +238,11 @@ if q == 0
 elseif q == 1
     u_sum  = 0;
     u_diff = 0;
-elseif q == 2
-    if q_auto == 0 || q_auto == 1
-        u_diff = -u_park;
-    else
-        u_sum  = -u_park;
+elseif q == 2 %aligned with new automaton
+    if q_auto == 0 || q_auto == 2
+        u_diff = -u_park; 
+    elseif q_auto == 1
+        u_sum  = -u_park;  
     end
 elseif q == 3
     tw = t - t_state_enter;
