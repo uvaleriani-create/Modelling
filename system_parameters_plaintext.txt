@@ -1,0 +1,60 @@
+================================================================================
+            3D PRINTER SYSTEM PARAMETERS, UNITS 
+================================================================================
+All parameters are loosely based on real printers such as CoreXY and NEMA motors in order to produce a more realistic behaviour. 
+--------------------------------------------------------------------------------
+
+[TABLE 1] DC MOTOR & MECHANICAL KINEMATIC PARAMETERS
+--------------------------------------------------------------------------------
+Variable  | Symbol   | Value     | Unit       
+----------------------------------------------
+rm        | r_m      | 0.006     | m           
+km        | k_m      | 0.05      | V*s/rad     
+Jm        | J_m      | 5.0e-5    | kg*m^2     
+Lm        | L_m      | 0.003     | H (3 mH)    
+Rm        | R_m      | 2.0       | Ohm         
+
+
+[TABLE 2] PRINT BED GEOMETRY & TRAJECTORY PARAMETERS
+--------------------------------------------------------------------------------
+Variable  | Symbol   | Value     | Unit   
+------------------------------------------
+L_bed     | L_bed    | 0.10      | m      
+L_sq      | L_sq     | 0.06      | m      
+phi_deg   | phi      | 25        | deg    
+phi_rad   | phi_rad  | 0.4363    | rad    
+a_ell     | a_ell    | 0.035     | m      
+b_ell     | b_ell    | 0.025     | m      
+T_ell     | T_ell    | 4.0       | s      
+w0_ell    | w0       | 1.5708    | rad/s  
+L_max     | L_max    | 0.12/0.15 | m      
+L_wipe    | L_wipe   | 0.025     | m      
+
+
+[TABLE 3] NOZZLE ELECTRO-THERMAL PARAMETERS
+--------------------------------------------------------------------------------
+Variable  | Symbol   | Value     | Unit      
+---------------------------------------------
+Ctn       | C_{t,n}  | 9.0       | J/K       
+Rtn       | R_{t,n}  | 6.5       | K/W       
+Rn        | R_n      | 14.4      | Ohm       
+Cn        | C_n      | 0.1       | F         
+Ln        | L_n      | 0.1       | H         
+Te        | T_e      | 25        | deg C     
+T_high    | T_high   | 200       | deg C     
+T_low     | T_low    | 40        | deg C     
+un        | u_n      | 24        | V         
+
+
+[TABLE 4] CONTROL, SENSOR & SIMULATION PARAMETERS
+--------------------------------------------------------------------------------
+Variable  | Symbol   | Value     | Unit        
+-----------------------------------------------
+dt_poll   | dt_poll  | 0.02      | s           
+t_final   | t_final  | 255/260   | s           
+omega_tol | w_tol    | 0.05      | rad/s      
+pos_tol   | pos_tol  | 5e-4/1e-3 | m or rad   
+u_park    | u_park   | 1.2       | V          
+u_print   | u_print  | 0.8       | V          
+Kp        | K_p      | 180 / 0.8 | V/m or -   
+Kd        | K_d      | 7.2/0.032 | V*s/m or - 
