@@ -1,3 +1,18 @@
+% Same sensor polling function as in Q3_1
+function [M, m] = poll_rotational_sensors(u_l, u_r, dtheta_l, dtheta_r, omega_tol)
+if abs(u_l - u_r) > abs(u_l + u_r)
+    M = 'V';
+    omega_active = abs(dtheta_l - dtheta_r);
+else
+    M = 'H';
+    omega_active = abs(dtheta_l + dtheta_r);
+end
+if omega_active > omega_tol
+    m = '+';
+else
+    m = '0';
+end
+end
 
 %--dynamics solver---
 function dX = printer_dynamics(~, X)
