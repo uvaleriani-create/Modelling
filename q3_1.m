@@ -2,7 +2,7 @@ clear; clc; close all;
 global q q_auto L_bed L_max T_high T_low
 global x_saved y_saved t_print_offset t_state_enter
 
-%included new parameters to fix heating issues
+% --- Parameters ---
 rm = 0.006;
 km = 0.05;
 Jm = 5e-5;
@@ -12,18 +12,17 @@ L_bed  = 0.10;
 L_max  = 0.12;
 T_high = 200;
 T_low  = 40;
-
 x_center = L_bed / 2;
 y_center = L_bed / 2;
 a_ell    = 0.035;
 b_ell    = 0.025;
 T_ell    = 4.0;
 w0_ell   = 2 * pi / T_ell;
-
 x_start  = x_center + a_ell;
 y_start  = y_center;
 vy_start = b_ell * w0_ell;
 
+% State initialization
 q              = 0;
 q_auto         = 0;
 x_saved        = 0;
@@ -36,11 +35,11 @@ t_curr    = 0;
 t_final   = 255;
 omega_tol = 0.05;
 pos_tol   = 5e-4;
-
 X0 = [x_start; 0; 0; y_start; vy_start; 0; 200; 24; 24/14.4; 0];
-t_out = []; X_out = []; q_out = []; q_auto_out = [];
+t_out = []; X_out = []; q_out = []; q_auto_out = []; U_out = [];
 x_runout = NaN; y_runout = NaN;
 
+% --- Simulation Loop ---
 while t_curr < t_final
     if ismember(q, [0, 1, 2, 3, 7])
         t_next   = min(t_curr + dt_poll, t_final);
@@ -57,10 +56,17 @@ while t_curr < t_final
                      'RelTol', 1e-6, 'AbsTol', 1e-8);
     [t, X, te, ~, ie] = ode15s(@printer_dynamics_q31, [t_curr, t_next], X0, options);
     
+    u_seg = zeros(length(t), 2);
+    for k_u = 1:length(t)
+        [u_l_k, u_r_k] = get_motor_voltages_q31(q, t(k_u), X(k_u, :)');
+        u_seg(k_u, :) = [u_l_k, u_r_k];
+    end
+    
     t_out      = [t_out; t];
     X_out      = [X_out; X];
     q_out      = [q_out; q * ones(length(t), 1)];
     q_auto_out = [q_auto_out; q_auto * ones(length(t), 1)];
+    U_out      = [U_out; u_seg];
     
     X0     = X(end, :)';
     t_curr = t(end);
@@ -77,7 +83,6 @@ while t_curr < t_final
     dtheta_l = (X0(2) + X0(5)) / rm;
     dtheta_r = (X0(2) - X0(5)) / rm;
     
-    %fixed getting stuck on tempertaure 
     if ~isempty(te)
         if q == 0 && ismember(1, ie)
             disp('filament run out');
@@ -115,7 +120,7 @@ while t_curr < t_final
         [M, m]     = poll_rotational_sensors(u_l, u_r, dtheta_l, dtheta_r, omega_tol);
         q_auto     = step_dfa_parked(q_auto, M, m);
         
-        if q_auto == 3 % corrected
+        if q_auto == 3
             disp('origin detected');
             q             = 3;
             t_state_enter = t_curr;
@@ -134,7 +139,6 @@ while t_curr < t_final
             q             = 6;
             t_state_enter = t_curr;
         end
-    %fixed drifting
     elseif q == 7
         dist_err = hypot(x_saved - X0(1), y_saved - X0(4));
         if dist_err <= pos_tol && abs(dtheta_l) <= omega_tol && abs(dtheta_r) <= omega_tol
@@ -147,55 +151,125 @@ while t_curr < t_final
     end
 end
 
-%various plotting ----add voltages---
-figure('Name', 'Q3.1 Spatial Path Tracking', 'Position', [100, 100, 620, 520]);
-hold on;
-rectangle('Position', [0, 0, L_bed, L_bed], 'EdgeColor', [0.5 0.5 0.5], ...
-          'LineStyle', ':', 'LineWidth', 1.5);
-plot(X_out(:,1), X_out(:,4), 'r--', 'LineWidth', 1.2);
+c_printed = [0.00, 0.45, 0.74];  
+c_travel  = [0.85, 0.33, 0.10];  
+c_wipe    = [0.47, 0.67, 0.19];  
+c_start   = [0.49, 0.18, 0.56];  
+
+
+% ---PLOTTING----
+figure('Name', 'Q3.1 Spatial Path Tracking', 'Position', [50, 40, 1150, 880]);
+hold on; grid on; box on;
+set(gca, 'FontSize', 22, 'LineWidth', 2.0);
+
+h_bed = plot([0, L_bed, L_bed, 0, 0], [0, 0, L_bed, L_bed, 0], '--', ...
+             'Color', [0.4 0.4 0.4], 'LineWidth', 2.8, 'DisplayName', 'Print Bed Boundary');
+
+h_travel = plot(X_out(:,1), X_out(:,4), '--', 'Color', c_travel, ...
+                'LineWidth', 2.8, 'DisplayName', 'Travel Trajectory (H/V Moves)');
+
 x_print = X_out(:,1); y_print = X_out(:,4);
 x_print(q_out ~= 0 & q_out ~= 3) = NaN;
 y_print(q_out ~= 0 & q_out ~= 3) = NaN;
-plot(x_print, y_print, 'b', 'LineWidth', 2.2);
-scatter(0, 0, 90, 'g', 'filled');
-scatter(x_start, y_start, 70, 'm', 'd', 'filled');
-scatter(x_runout, y_runout, 100, 'k', 'x', 'LineWidth', 2);
-grid on; axis equal;
-xlim([-0.01, L_bed + 0.01]); ylim([-0.01, L_bed + 0.01]);
-xlabel('X Position (m)'); ylabel('Y Position (m)');
-title('Q3.1: 2D Printer Nozzle Path (Ellipse Printing & Filament Replacement)');
-legend('Travel Trajectory (H/V Moves)', 'Printed Trajectory (Extruding)', ...
-       'Wipe Location (0,0)', 'Print Start/End', 'Filament Runout Point', 'Location', 'best');
+h_print = plot(x_print, y_print, '-', 'Color', c_printed, ...
+               'LineWidth', 4.5, 'DisplayName', 'Printed Trajectory (Extruding)');
 
-figure('Name', 'Q3.1 FSM & Automaton States', 'Position', [740, 100, 600, 420]);
+h_wipe  = scatter(0, 0, 260, c_wipe, 'filled', 'o', 'MarkerEdgeColor', 'k', ...
+                  'LineWidth', 2.0, 'DisplayName', 'Wipe Location (0,0)');
+h_start = scatter(x_start, y_start, 240, c_start, 'd', 'filled', 'MarkerEdgeColor', 'k', ...
+                  'LineWidth', 2.0, 'DisplayName', 'Print Start / Resumption');
+h_runout= scatter(x_runout, y_runout, 280, 'k', 'x', 'LineWidth', 4.0, ...
+                  'DisplayName', 'Filament Runout Point');
+
+axis equal;
+xlim([-0.015, L_bed + 0.015]); ylim([-0.015, L_bed + 0.015]);
+xlabel('X Position (m)', 'FontSize', 26, 'FontWeight', 'bold');
+ylabel('Y Position (m)', 'FontSize', 26, 'FontWeight', 'bold');
+title({'Q3.1: 2D Printer Nozzle Path Tracking', 'Ellipse Printing & Homing'}, ...
+      'FontSize', 28, 'FontWeight', 'bold');
+legend([h_bed, h_print, h_travel, h_wipe, h_start, h_runout], ...
+       'Location', 'northeastoutside', 'FontSize', 20);
+
+
+q_auto_plot = q_auto_out;
+q_auto_plot(q_out ~= 2 & q_out ~= 3) = NaN;
+
+figure('Name', 'Q3.1 FSM & Automaton States', 'Position', [50, 40, 1100, 850]);
 subplot(2,1,1);
-plot(t_out, q_out, 'k', 'LineWidth', 1.8);
-grid on; xlabel('Time (s)'); ylabel('FSM State (q)');
-title('Q3.1 High-Level FSM Progression');
+plot(t_out, q_out, 'k', 'LineWidth', 3.2);
+grid on; box on;
+set(gca, 'FontSize', 20, 'LineWidth', 1.8);
+xlabel('Time (s)', 'FontSize', 24, 'FontWeight', 'bold');
+ylabel('FSM State (q)', 'FontSize', 24, 'FontWeight', 'bold');
+title('Q3.1 High-Level FSM Progression', 'FontSize', 26, 'FontWeight', 'bold');
 yticks(0:7);
 yticklabels({'S0: Print', 'S1: Save', 'S2: Move 0', 'S3: Wipe', ...
              'S4: Cool', 'S5: Load', 'S6: Heat', 'S7: Return'});
+
 subplot(2,1,2);
-plot(t_out, q_auto_out, 'm', 'LineWidth', 1.8);
-grid on; xlabel('Time (s)'); ylabel('DFA State');
-title('Q2.2 Automaton State (Active in S2 Homing to Origin)');
-yticks(0:5);
-yticklabels({'Q0: Init', 'Q1: (V,+)', 'Q2: (V,0)', 'Q3: Sink', 'Q4: (H,+)', 'Q5: Origin'});
+plot(t_out, q_auto_plot, 'm', 'LineWidth', 3.2);
+grid on; box on;
+set(gca, 'FontSize', 20, 'LineWidth', 1.8);
+xlabel('Time (s)', 'FontSize', 24, 'FontWeight', 'bold');
+ylabel('DFA State', 'FontSize', 24, 'FontWeight', 'bold');
+title('Q2.2 Automaton State (Active during S2 Homing)', 'FontSize', 26, 'FontWeight', 'bold');
+yticks(0:3);
+yticklabels({'Q0: Open', 'Q1: V-Hit', 'Q2: H-Hit', 'Q3: Origin'});
+ylim([-0.5, 3.5]);
 
-figure('Name', 'Q3.1 Nozzle Temperature', 'Position', [100, 650, 600, 300]);
-plot(t_out, X_out(:,7), 'r', 'LineWidth', 2);
-yline(T_high, 'k--'); yline(T_low, 'b--');
-grid on; xlabel('Time (s)'); ylabel('Temperature (°C)');
-title('Q3.1 Nozzle Temperature Profile');
-legend('Nozzle Temp (T_n)', 'T_{high} Threshold', 'T_{low} Threshold', 'Location', 'best');
 
-figure('Name', 'Q3.1 Filament Tracking', 'Position', [740, 650, 600, 300]);
-plot(t_out, X_out(:,10), 'b', 'LineWidth', 2);
-yline(L_max, 'r--');
-grid on; xlabel('Time (s)'); ylabel('Filament Used \Delta x (m)');
-title('Q3.1 Main Filament Consumption & Reset R(S5,S6)');
-legend('Extruded Filament (\Delta x)', 'L_{max} Limit', 'Location', 'NorthWest');
+figure('Name', 'Q3.1 Control Motor Voltages', 'Position', [50, 40, 1100, 850]);
+subplot(2,1,1);
+plot(t_out, U_out(:,1), 'Color', c_printed, 'LineWidth', 3.0, 'DisplayName', 'u_l (Left Motor)'); hold on;
+plot(t_out, U_out(:,2), 'Color', c_travel,  'LineWidth', 3.0, 'DisplayName', 'u_r (Right Motor)');
+grid on; box on;
+set(gca, 'FontSize', 20, 'LineWidth', 1.8);
+xlim([0, 10]);
+ylabel('Voltage (V)', 'FontSize', 24, 'FontWeight', 'bold');
+title('Q3.1 Control Voltages: Initial Print, Homing & Wiping (0 - 10 s)', 'FontSize', 25, 'FontWeight', 'bold');
+legend('Location', 'northeast', 'FontSize', 20);
 
+subplot(2,1,2);
+plot(t_out, U_out(:,1), 'Color', c_printed, 'LineWidth', 3.0, 'DisplayName', 'u_l (Left Motor)'); hold on;
+plot(t_out, U_out(:,2), 'Color', c_travel,  'LineWidth', 3.0, 'DisplayName', 'u_r (Right Motor)');
+grid on; box on;
+set(gca, 'FontSize', 20, 'LineWidth', 1.8);
+xlim([t_out(end)-15, t_out(end)]);
+xlabel('Time (s)', 'FontSize', 24, 'FontWeight', 'bold');
+ylabel('Voltage (V)', 'FontSize', 24, 'FontWeight', 'bold');
+title('Q3.1 Control Voltages: Return to Saved Pose & Ellipse Resumption', 'FontSize', 25, 'FontWeight', 'bold');
+legend('Location', 'northeast', 'FontSize', 20);
+
+
+figure('Name', '3D Spatio-Temporal Tracking', 'Position', [50, 40, 1150, 880]);
+hold on; grid on; box on; view(3);
+set(gca, 'FontSize', 20, 'LineWidth', 1.8);
+
+plot3(X_out(:,1), X_out(:,4), t_out, '--', 'Color', c_travel, ...
+      'LineWidth', 2.8, 'DisplayName', 'Travel (Not Printing)');
+plot3(x_print, y_print, t_out, '-', 'Color', c_printed, ...
+      'LineWidth', 4.5, 'DisplayName', 'Printed Path');
+
+scatter3(x_start, y_start, t_out(1), 240, c_start, 'd', 'filled', ...
+         'MarkerEdgeColor', 'k', 'LineWidth', 2.0, 'DisplayName', 'Print Start');
+
+idx_runout = find(q_out == 1, 1);
+if ~isempty(idx_runout)
+    scatter3(X_out(idx_runout,1), X_out(idx_runout,4), t_out(idx_runout), ...
+             280, 'k', 'x', 'LineWidth', 4.0, 'DisplayName', 'Filament Runout');
+end
+
+plot3([0, L_bed, L_bed, 0, 0], [0, 0, L_bed, L_bed, 0], zeros(1,5), '--', ...
+      'Color', [0.4 0.4 0.4], 'LineWidth', 2.8, 'DisplayName', 'Print Bed');
+
+xlabel('X Position (m)', 'FontSize', 24, 'FontWeight', 'bold');
+ylabel('Y Position (m)', 'FontSize', 24, 'FontWeight', 'bold');
+zlabel('Time (s)', 'FontSize', 24, 'FontWeight', 'bold');
+title('3D Spatiotemporal Path', 'FontSize', 26, 'FontWeight', 'bold');
+legend('Location', 'bestoutside', 'FontSize', 20);
+
+% =========================================================================
+% Various Helper Functions:
 function [M, m] = poll_rotational_sensors(u_l, u_r, dtheta_l, dtheta_r, omega_tol)
 if abs(u_l - u_r) > abs(u_l + u_r)
     M = 'V';
@@ -210,7 +284,7 @@ else
     m = '0';
 end
 end
-%refractored already
+
 function [u_l, u_r] = get_motor_voltages_q31(q, t, X)
 global q_auto L_bed x_saved y_saved t_print_offset t_state_enter
 rm = 0.006; km = 0.05; Jm = 5e-5; Lm = 3e-3; Rm = 2.0;
@@ -238,7 +312,7 @@ if q == 0
 elseif q == 1
     u_sum  = 0;
     u_diff = 0;
-elseif q == 2 %aligned with new automaton
+elseif q == 2
     if q_auto == 0 || q_auto == 2
         u_diff = -u_park; 
     elseif q_auto == 1
@@ -262,7 +336,6 @@ u_l = 0.5 * (u_sum + u_diff);
 u_r = 0.5 * (u_sum - u_diff);
 end
 
-%currently up o date correct automata
 function q_next = step_dfa_parked(q_curr, M, m)
 switch q_curr
     case 0 
@@ -294,7 +367,6 @@ Tn = X(7); ucn = X(8); iln = X(9);
 [u_l, u_r] = get_motor_voltages_q31(q, t, X);
 u_sum_in  = u_l + u_r;
 u_diff_in = u_l - u_r;
-
 if q == 4 || q == 5
     un = 0;
 else
@@ -306,7 +378,6 @@ dx_dot  = (rm * km / (2 * Jm)) * i_sum;
 di_sum  = (-2 * km / (rm * Lm)) * x_dot - (Rm / Lm) * i_sum + (1 / Lm) * u_sum_in;
 dy_dot  = (rm * km / (2 * Jm)) * i_diff;
 di_diff = (-2 * km / (rm * Lm)) * y_dot - (Rm / Lm) * i_diff + (1 / Lm) * u_diff_in;
-
 if q ~= 3
     if x <= 0 && (x_dot < 0 || dx_dot < 0)
         vx = max(0, x_dot); dx_dot = -500 * x_dot;
@@ -322,7 +393,6 @@ end
 dTn  = (1 / Ctn) * ((ucn^2 / Rn) - ((Tn - Te) / Rtn));
 ducn = (1 / Cn) * (iln - (ucn / Rn));
 diln = (1 / Ln) * (un - ucn);
-
 ddelta_x = (q == 0) * sqrt(vx^2 + vy^2);
 dX = [vx; dx_dot; di_sum; vy; dy_dot; di_diff; dTn; ducn; diln; ddelta_x];
 end
