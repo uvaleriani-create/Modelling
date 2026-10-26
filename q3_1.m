@@ -286,6 +286,7 @@ end
 end
 
 function [u_l, u_r] = get_motor_voltages_q31(q, t, X)
+% calculates and returns the left and right motor control voltages required to drive the printer
 global q_auto L_bed x_saved y_saved t_print_offset t_state_enter
 rm = 0.006; km = 0.05; Jm = 5e-5; Lm = 3e-3; Rm = 2.0;
 u_park = 1.2;
