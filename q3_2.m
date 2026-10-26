@@ -143,3 +143,36 @@ switch q_curr
         else,                        q_next = 3; end
 end
 end
+
+% guards and invariamts for FSM
+function [value, isterminal, direction] = printer_events(~, X)
+global q edge_phase L_sq L_max L_wipe T_high T_low
+rm = 0.006; km = 0.05; Jm = 5e-5; Rm = 2.0;
+value = ones(7, 1);
+isterminal = ones(7, 1);
+direction = zeros(7, 1);
+dtheta_l = (X(2) + X(5)) / rm;
+dtheta_r = (X(2) - X(5)) / rm;
+v_sensor = (rm / 2) * sqrt((dtheta_l + dtheta_r)^2 + (dtheta_l - dtheta_r)^2);
+tau_m = (Jm * Rm) / (km^2);
+if q == 0
+    value(1) = L_max - X(10);
+    direction(1) = -1;
+    if edge_phase == 1
+        value(2) = L_sq - (X(14) + tau_m * v_sensor);
+        direction(2) = -1;
+    end
+elseif q == 3
+    value(3) = L_wipe - X(11);
+    direction(3) = -1;
+elseif q == 4
+    value(4) = X(7) - T_low;
+    direction(4) = -1;
+elseif q == 5
+    value(7) = 10 - X(13);
+    direction(7) = -1;
+elseif q == 6
+    value(5) = T_high - X(7);
+    direction(5) = -1;
+end
+end
