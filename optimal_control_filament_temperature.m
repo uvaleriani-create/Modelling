@@ -107,6 +107,7 @@ n_mid = n_cells/2 + 0.5;
 
 uniformity_option = 0;
 
+% Deploying all cells
 for i = 1:points
     printed_path_x = [printed_path_x, x_path(i)];
     printed_path_y = [printed_path_y, y_path(i)];
@@ -150,8 +151,12 @@ for i = 1:points
     %}
 end
 
+% Hopefully the last cell temperature will be the mean temperature of all
+% cells
 cellN_t = cells_temperature(points);
 
+
+% Plotting
 t = linspace(0, dt*length(cell1_t), length(cell1_t));
 t_m = linspace(dt*n_mid, dt*length(cell1_t), length(cell_mid_t));
 

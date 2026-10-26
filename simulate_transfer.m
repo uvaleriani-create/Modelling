@@ -1,5 +1,9 @@
 
 function cells_temperature = simulate_transfer(temp_mid, L, points, dt, uniformity_option)
+% This function computes the heat exchanges and new cells temperatures. It
+% can be toggled in order to connect first and last cell for heat exchange
+% with the uniformity_option
+
 
     % path discretization and cells dimensioning
     cell_length = L/(points/4);
@@ -37,6 +41,8 @@ function cells_temperature = simulate_transfer(temp_mid, L, points, dt, uniformi
         
         % Neighbour cells diffusion heat transfer
         neigh_heatTransfer = 0;
+
+        % Exclusion of first and last cell from calculation
         if k > 1
             neigh_heatTransfer = neigh_heatTransfer + ...
                 (temp_mid(k-1) - temp_mid(k)) / beta_diff_int;
@@ -46,6 +52,8 @@ function cells_temperature = simulate_transfer(temp_mid, L, points, dt, uniformi
             (temp_mid(k+1) - temp_mid(k)) / beta_diff_int;
         end
         
+        % If the option is toggled, the first and last cells are now
+        % connected and they exchange heat too. 
         if uniformity_option == 1
             if k == 1
                 neigh_heatTransfer = neigh_heatTransfer + (temp_mid(points) - temp_mid(k)) / beta_diff_int;
@@ -58,10 +66,8 @@ function cells_temperature = simulate_transfer(temp_mid, L, points, dt, uniformi
             end
         end
 
-        % Tottal heat exchange and temperature
+        % Total heat exchange and temperature
         tot_heatTransfer = bed_heatTransfer + air_heatTransfer + neigh_heatTransfer;
         cells_temperature(k) = temp_mid(k) + (dt / (unit_cap * cell_volume)) * tot_heatTransfer;
     end
-
-
 end

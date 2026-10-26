@@ -46,8 +46,10 @@ cell1_t = [];
 cell_mid_t = [];
 n_mid = n_cells/2 + 0.5;
 
+% option for system simulation
 uniformity_option = 0;
 
+% Cycle until all cells are deployed
 for i = 1:points
     printed_path_x = [printed_path_x, x_path(i)];
     printed_path_y = [printed_path_y, y_path(i)];
@@ -99,6 +101,7 @@ temp_toll = 0.5;
 uniformity_option = 1;
 cellN_t = [];
 
+% Cycle untill cells temperature is uniform
 while flag_uniform_t == 0
     temperatureRange = max(cells_temperature) - min(cells_temperature);
     if temperatureRange <= temp_toll
@@ -141,6 +144,7 @@ while flag_uniform_t == 0
 end
 %}
 
+% Plotting
 t = linspace(0, dt*length(cell1_t), length(cell1_t));
 t_N = linspace(dt*end_of_print, dt*length(cell1_t), length(cellN_t));
 t_m = linspace(dt*n_mid, dt*length(cell1_t), length(cell_mid_t));

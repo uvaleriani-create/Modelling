@@ -12,7 +12,7 @@ Jm = 5.0e-5;      % [kg*m^2]
 Lm = 0.003;       % [H]
 Rm = 2.0;         % [Ohm]
 
-
+% Parameters for hybrid system
 sigma_print = 1 %boolean flag coming from FSM indicating that 1:operational printing 0:printing stopped
 L_wipe = 0.05; % in cm filament to extrude when wiping
 sigma_wipe = 1 %boolean flag indicating that FSM is in state S3
@@ -108,6 +108,7 @@ for k = -n_armonics : n_armonics
     z_dddot = z_dddot + (-1i * (k * w_0)^3) * fourierCoefficients(index) * exp_term;
 end
 
+% Computing the path coordinates
 x_path_fourier = real(z);
 y_path_fourier = imag(z);
 x_vel_fourier = real(z_dot);
