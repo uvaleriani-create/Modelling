@@ -6,11 +6,11 @@ close all;
 % obtain the inputs to the 3D printer motors.
 
 % Typical values
-rm = 0.012;  
-km = 0.05;    
-Jm = 1e-4;   
-Lm = 1e-3;    
-Rm = 2.0;
+rm = 0.006;       % [m]
+km = 0.05;        % [V*s/rad]
+Jm = 5.0e-5;      % [kg*m^2]
+Lm = 0.003;       % [H]
+Rm = 2.0;         % [Ohm]
 
 
 sigma_print = 1 %boolean flag coming from FSM indicating that 1:operational printing 0:printing stopped

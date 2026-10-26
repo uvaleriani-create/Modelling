@@ -38,7 +38,7 @@ unit_cap = 1.5e6;
 unit_diff_filament = 0.2;
 rho_bed = 100;
 rho_air = 50;
-ext_temp = 35;
+ext_temp = 25;
 nozzle_eff = 0.95;
 
 beta_diff_int = cell_length / (unit_diff_filament * cell_inner);

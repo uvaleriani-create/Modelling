@@ -36,7 +36,7 @@ cell_volume = cell_base * cell_height;
 % Temperatures and constants:
 nozzle_temperature = 120;
 nozzle_eff = 0.95;
-ext_temp = 35;     % assumed constant
+ext_temp = 25;     % assumed constant
 
 % Computing the temperature over filament deposition
 cells_temperature = [];             % Empty initial temperature domain
