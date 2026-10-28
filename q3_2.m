@@ -61,7 +61,20 @@ while t_curr < t_final
     
     X0 = X(end, :)';
     
-
+if q ~= 3
+        if X0(1) <= 1e-5 && X0(2) < 0, X0(1) = 0; X0(2:3) = 0; end
+        if X0(1) >= L_bed - 1e-5 && X0(2) > 0, X0(1) = L_bed; X0(2:3) = 0; end
+        if X0(4) <= 1e-5 && X0(5) < 0, X0(4) = 0; X0(5:6) = 0; end
+        if X0(4) >= L_bed - 1e-5 && X0(5) > 0, X0(4) = L_bed; X0(5:6) = 0; end
+        X0(1) = min(max(X0(1), 0), L_bed);
+        X0(4) = min(max(X0(4), 0), L_bed);
+    end
+    t_curr = t(end);
+    
+    dtheta_l = (X0(2) + X0(5)) / rm;
+    dtheta_r = (X0(2) - X0(5)) / rm;
+    theta_l  = (X0(1) + X0(4)) / rm;
+    theta_r  = (X0(1) - X0(4)) / rm;
 
 % Same sensor polling function as in Q3_1
 function [M, m] = poll_rotational_sensors(u_l, u_r, dtheta_l, dtheta_r, omega_tol)
