@@ -1,3 +1,68 @@
+clear; clc; close all;
+global q q_auto side_idx edge_phase L_bed L_sq L_max L_wipe T_high T_low
+global theta_sum_saved theta_diff_saved delta_s_saved return_phase
+
+% --- Parameters ---
+rm = 0.006;
+km = 0.05;
+Jm = 5e-5;
+Lm = 3e-3;
+Rm = 2.0;
+L_bed   = 0.10;        
+L_sq    = 0.06;        
+L_max   = 2.5 * L_sq;  
+L_wipe  = 0.025;     
+T_high  = 200; T_low = 40;
+x_start = L_bed/2 - L_sq/2;
+y_start = L_bed/2 - L_sq/2;
+q = 0;                
+q_auto = 0;           
+side_idx = 1;         
+edge_phase = 1;       
+return_phase = 1;     
+theta_sum_saved  = 0;
+theta_diff_saved = 0;
+delta_s_saved    = 0;
+dt_poll   = 0.02;     
+t_curr    = 0;
+t_final   = 500;      
+omega_tol = 0.05;     
+pos_tol   = 1e-3;     
+X0 = [x_start; 0; 0; y_start; 0; 0; 200; 24; 24/14.4; 0; 0; 0; 0; 0];
+t_out = []; X_out = []; q_out = []; q_auto_out = []; U_out = [];
+x_runout = NaN; y_runout = NaN;
+
+while t_curr < t_final
+    if ismember(q, [0, 1, 2, 7])
+        t_next = min(t_curr + dt_poll, t_final);
+        max_step = 5e-3;
+    elseif q == 3
+        t_next = t_final;
+        max_step = 5e-3;
+    else
+        t_next = t_final;
+        max_step = 0.5;
+    end
+    
+    options = odeset('Events', @printer_events, 'MaxStep', max_step, 'RelTol', 1e-6, 'AbsTol', 1e-8);
+    [t, X, te, ~, ie] = ode15s(@printer_dynamics, [t_curr, t_next], X0, options);
+    
+    u_seg = zeros(length(t), 2);
+    for k_u = 1:length(t)
+        [u_l_k, u_r_k] = get_motor_voltages(q, X(k_u, :)');
+        u_seg(k_u, :) = [u_l_k, u_r_k];
+    end
+    
+    t_out      = [t_out; t];
+    X_out      = [X_out; X];
+    q_out      = [q_out; q * ones(length(t), 1)];
+    q_auto_out = [q_auto_out; q_auto * ones(length(t), 1)];
+    U_out      = [U_out; u_seg];
+    
+    X0 = X(end, :)';
+    
+
+
 % Same sensor polling function as in Q3_1
 function [M, m] = poll_rotational_sensors(u_l, u_r, dtheta_l, dtheta_r, omega_tol)
 if abs(u_l - u_r) > abs(u_l + u_r)
