@@ -6,13 +6,13 @@ close all;
 % obtain the inputs to the 3D printer motors.
 
 % Typical values
-rm = 0.012;  
-km = 0.05;    
-Jm = 1e-4;   
-Lm = 1e-3;    
-Rm = 2.0;
+rm = 0.006;       % [m]
+km = 0.05;        % [V*s/rad]
+Jm = 5.0e-5;      % [kg*m^2]
+Lm = 0.003;       % [H]
+Rm = 2.0;         % [Ohm]
 
-
+% Parameters for hybrid system
 sigma_print = 1 %boolean flag coming from FSM indicating that 1:operational printing 0:printing stopped
 L_wipe = 0.05; % in cm filament to extrude when wiping
 sigma_wipe = 1 %boolean flag indicating that FSM is in state S3
@@ -42,7 +42,7 @@ y_path = [y_base, y_right, y_top, y_left];
 
 
 % Michey mouse path
-%
+%{
 % Import and mirror around x axis
 data = importMickey("mickey_mouse_simple.csv");
 x_path = [data(1:(length(data)),1); data(1,1)];
@@ -87,7 +87,7 @@ complexPath = x_path + 1i * y_path;
 fourierCoefficients = fft(complexPath) / numel(complexPath);
 
 % Compute fourier series
-T = 5;
+T = 10;
 w_0 = 2*pi/T;
 t = linspace(0,T, points);
 
@@ -108,6 +108,7 @@ for k = -n_armonics : n_armonics
     z_dddot = z_dddot + (-1i * (k * w_0)^3) * fourierCoefficients(index) * exp_term;
 end
 
+% Computing the path coordinates
 x_path_fourier = real(z);
 y_path_fourier = imag(z);
 x_vel_fourier = real(z_dot);
