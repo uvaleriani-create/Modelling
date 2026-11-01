@@ -26,13 +26,14 @@ In the first question we are tasked to derive some physical models and simulate 
 ---
 
 ## Q2 - Finite State Machines
-
+The implementation can be found within the files for Q3
 
 
 ---
 
 ## Q3 - Hybrid Systems
-
+- **Q3.1**: Files => [q3_1.m]
+- **Q3.2**: Files => [q3_2.m]
 
 
 ---
