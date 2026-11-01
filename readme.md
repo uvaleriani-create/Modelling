@@ -32,6 +32,7 @@ The implementation can be found within the files for Q3
 ---
 
 ## Q3 - Hybrid Systems
+Please note that both files have been implemented as standalone files in order to avoid possible dependencies issues. As such, multiple functions, logic blocks and plots are repeated between the two files. 
 - **Q3.1**: Files => [q3_1.m]
 - **Q3.2**: Files => [q3_2.m]
 
