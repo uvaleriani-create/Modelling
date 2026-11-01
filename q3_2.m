@@ -28,7 +28,7 @@ t_curr    = 0;
 t_final   = 500;      
 omega_tol = 0.05;     
 pos_tol   = 1e-3;     
-X0 = [x_start; 0; 0; y_start; 0; 0; 200; 24; 24/14.4; 0; 0; 0; 0; 0];
+X0 = [x_start; 0; 0; y_start; 0; 0; 200; 24; 24/14.4; 0; 0; 0; 0; 0]; %the state vector size does not match the formal definition used in the report due to the fact that the formal definitios adds states that are inherently handled bt MATLAB (e.g polling clock)
 t_out = []; X_out = []; q_out = []; q_auto_out = []; U_out = [];
 x_runout = NaN; y_runout = NaN;
 
@@ -43,9 +43,10 @@ while t_curr < t_final
         t_next = t_final;
         max_step = 0.5;
     end
-    
+
+    %wrapper ode solver
     options = odeset('Events', @printer_events, 'MaxStep', max_step, 'RelTol', 1e-6, 'AbsTol', 1e-8);
-    [t, X, te, ~, ie] = ode15s(@printer_dynamics, [t_curr, t_next], X0, options);
+    [t, X, te, ~, ie] = ode15s(@printer_dynamics, [t_curr, t_next], X0, options); % the event index ie holds the specific condition within the printer_events array that triggered the continuous solver to stop (such as a guard condition)
     
     u_seg = zeros(length(t), 2);
     for k_u = 1:length(t)
@@ -75,6 +76,91 @@ if q ~= 3
     dtheta_r = (X0(2) - X0(5)) / rm;
     theta_l  = (X0(1) + X0(4)) / rm;
     theta_r  = (X0(1) - X0(4)) / rm;
+    
+if ~isempty(te) %discerete logic
+        if q == 0 && ismember(1, ie)
+            disp('Filament_Finished');
+            q = 1;
+        elseif q == 0 && ismember(2, ie)
+            edge_phase = 2; %switch to coasting to handle sharp corners
+        elseif q == 3 && ismember(3, ie)
+            disp('Excess_Removed');
+            q = 4;
+        elseif q == 4 && ismember(4, ie)
+            disp('Temp_Low');
+            q = 5;
+            X0(13) = 0;
+        elseif q == 5 && ismember(7, ie)
+            disp('Filament_Loaded');
+            q = 6;
+            X0(10) = 0;
+            X0(13) = 0;
+        elseif q == 6 && ismember(5, ie)
+            disp('Temp_High');
+            q = 7;
+            return_phase = 1;
+        end
+        continue;
+    end
+    
+    if q == 0
+        if edge_phase == 2 && abs(dtheta_l) <= omega_tol && abs(dtheta_r) <= omega_tol %coasting phase logic
+            if side_idx < 4
+                side_idx = side_idx + 1;
+                edge_phase = 1;
+                X0(14) = 0; 
+            else
+                disp('Square_Completed');
+                break;
+            end
+        end
+    elseif q == 1 % saving position logic, checks stillness and saves 
+        if abs(dtheta_l) <= omega_tol && abs(dtheta_r) <= omega_tol
+            theta_sum_saved  = theta_l + theta_r;
+            theta_diff_saved = theta_l - theta_r;
+            delta_s_saved    = X0(14); 
+            x_runout = X0(1);
+            y_runout = X0(4);
+            disp('Position_Saved');
+            q = 2;
+            q_auto = 0;
+        end
+    elseif q == 2 %automata logic 
+        [u_l, u_r] = get_motor_voltages(q, X0);
+        [M, m] = poll_rotational_sensors(u_l, u_r, dtheta_l, dtheta_r, omega_tol);
+        q_auto = step_dfa_parked(q_auto, M, m);
+        
+        if q_auto == 3
+            disp('Parked_At_Origin');
+            q = 3;
+            X0(11) = 0;
+            X0(12) = 0;
+        end
+    elseif q == 7 %return logic
+        if return_phase == 1
+            err_sum = abs(theta_sum_saved - (theta_l + theta_r));
+            if err_sum <= pos_tol && abs(dtheta_l + dtheta_r) <= omega_tol
+                return_phase = 2;
+            end
+        else
+            err_diff = abs(theta_diff_saved - (theta_l - theta_r));
+            if err_diff <= pos_tol && abs(dtheta_l - dtheta_r) <= omega_tol
+                disp('Returned_To_Saved');
+                q = 0;
+                q_auto = 0;
+                edge_phase = 1;
+                X0(14) = delta_s_saved; 
+            end
+        end
+    end
+end
+
+%color paths used for plots in RGG 0-1
+c_printed = [0.00, 0.45, 0.74];  
+c_travel  = [0.85, 0.33, 0.10];  
+c_wipe    = [0.47, 0.67, 0.19];  
+c_start   = [0.49, 0.18, 0.56]; 
+
 
 % Same sensor polling function as in Q3_1
 function [M, m] = poll_rotational_sensors(u_l, u_r, dtheta_l, dtheta_r, omega_tol)
@@ -168,6 +254,8 @@ theta_diff  = theta_l - theta_r;
 dtheta_sum  = dtheta_l + dtheta_r;
 dtheta_diff = dtheta_l - dtheta_r;
 
+
+%---Cases for various discrete cases---
 if q == 0
     if edge_phase == 1
         alpha_k = (side_idx - 1) * (pi / 2);
@@ -188,6 +276,7 @@ elseif q == 3
     w0  = 2 * pi; 
     tw  = X(12);
     
+    %cartesian mapping
     x_p = R_w * (1 - cos(w0 * tw));     y_p = R_w * (1 - cos(2 * w0 * tw));
     x_v = R_w * w0 * sin(w0 * tw);      y_v = 2 * R_w * w0 * sin(2 * w0 * tw);
     x_a = R_w * w0^2 * cos(w0 * tw);    y_a = 4 * R_w * w0^2 * cos(2 * w0 * tw);
@@ -196,15 +285,15 @@ elseif q == 3
     u_sum_ff  = (2*Jm*Lm/(rm*km))*x_j + (2*Jm*Rm/(rm*km))*x_a + (2*km/rm)*x_v;
     u_diff_ff = (2*Jm*Lm/(rm*km))*y_j + (2*Jm*Rm/(rm*km))*y_a + (2*km/rm)*y_v;
     
-    Kp_w = 0.8; Kd_w = 0.032;
+    Kp_w = 0.8; Kd_w = 0.032; %gain tuned for pole zero cancelltion
     u_sum  = u_sum_ff  + Kp_w * ((2/rm)*x_p - theta_sum)  + Kd_w * ((2/rm)*x_v - dtheta_sum);
     u_diff = u_diff_ff + Kp_w * ((2/rm)*y_p - theta_diff) + Kd_w * ((2/rm)*y_v - dtheta_diff);
 elseif q == 7
     Kp_ret = 0.8;
     Kd_ret = 0.032;
-    if return_phase == 1
-        u_cmd = Kp_ret * (theta_sum_saved - theta_sum) - Kd_ret * dtheta_sum;
-        u_sum = max(-u_park, min(u_park, u_cmd));
+    if return_phase == 1 % return condition
+        u_cmd = Kp_ret * (theta_sum_saved - theta_sum) - Kd_ret * dtheta_sum; %simple PD to track angular sum
+        u_sum = max(-u_park, min(u_park, u_cmd)); 
     else
         u_cmd  = Kp_ret * (theta_diff_saved - theta_diff) - Kd_ret * dtheta_diff;
         u_diff = max(-u_park, min(u_park, u_cmd));
@@ -241,7 +330,7 @@ end
 function [value, isterminal, direction] = printer_events(~, X)
 global q edge_phase L_sq L_max L_wipe T_high T_low
 rm = 0.006; km = 0.05; Jm = 5e-5; Rm = 2.0;
-value = ones(7, 1);
+value = ones(7, 1); % conditins that trigger stops (such as guards)
 isterminal = ones(7, 1);
 direction = zeros(7, 1);
 dtheta_l = (X(2) + X(5)) / rm;
