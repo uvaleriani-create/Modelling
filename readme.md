@@ -13,7 +13,7 @@ purposes:
 
 • Acting as a sparring partner to critically discuss and validate some results and conclusions. 
 
-NOTE: All images used have been either taken from the mini-project statement file or have been created by ourselves (Matlab/Python/Drawio). Only exception is the Mickey Mouse image used in the closed shape question, which is a copyright free to use image found on the internet.
+NOTE: All images used have been either taken from the mini-project statement file or have been created by ourselves (Matlab/Python/Drawio, MS Visio). Only exception is the Mickey Mouse image used in the closed shape question, which is a copyright free to use image found on the internet.
 
 ---
 
